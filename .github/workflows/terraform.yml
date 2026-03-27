@@ -1,0 +1,116 @@
+name: Terraform
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.9.8"
+  AWS_REGION: "eu-west-2"
+  WORKING_DIR: "terraform"
+
+jobs:
+  plan:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Create my backend.tfvars at runtime from secrets so it is never in github.
+      - name: Assemble backend config
+        run: |
+          cat > backend.tfvars << 'BACKEND_CONFIG'
+          bucket         = "${{ secrets.TF_BACKEND_BUCKET }}"
+          key            = "myapp/terraform.tfstate"
+          region         = "${{ env.AWS_REGION }}"
+          dynamodb_table = "${{ secrets.TF_BACKEND_DYNAMODB_TABLE }}"
+          encrypt        = true
+          BACKEND_CONFIG
+
+      - name: Terraform Init
+        run: terraform init -backend-config=backend.tfvars
+
+      # Save the plan for apply and a text copy for review. Pipefail so we 
+      # dont return success if the plan fails.
+      - name: Terraform Plan
+        run: |
+          set -o pipefail
+          terraform plan -no-color -out=tfplan 2>&1 | tee tfplan.txt
+
+      # Upload the plan artifact so the apply job can consume it.
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: |
+            ${{ env.WORKING_DIR }}/tfplan
+            ${{ env.WORKING_DIR }}/tfplan.txt
+          retention-days: 1
+
+  apply:
+    name: Terraform Apply
+    runs-on: ubuntu-latest
+    needs: plan
+    defaults:
+      run:
+        working-directory: ${{ env.WORKING_DIR }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Assemble backend config
+        run: |
+          cat > backend.tfvars << 'BACKEND_CONFIG'
+          bucket         = "${{ secrets.TF_BACKEND_BUCKET }}"
+          key            = "myapp/terraform.tfstate"
+          region         = "${{ env.AWS_REGION }}"
+          dynamodb_table = "${{ secrets.TF_BACKEND_DYNAMODB_TABLE }}"
+          encrypt        = true
+          BACKEND_CONFIG
+
+      - name: Terraform Init
+        run: terraform init -backend-config=backend.tfvars
+
+      # Download the exact plan binary produced by the plan job.
+      # Using a saved plan means apply executes precisely what was reviewed —
+      # no risk of drift between plan and apply.
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: ${{ env.WORKING_DIR }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
