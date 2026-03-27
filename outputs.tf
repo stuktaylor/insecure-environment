@@ -1,17 +1,5 @@
-# ─── SSH Access ───────────────────────────────────────────────────────────────
 
-output "ssh_private_key" {
-  description = "Private SSH key for the MongoDB instance. Save with: terraform output -raw ssh_private_key > mongodb.pem && chmod 600 mongodb.pem"
-  value       = tls_private_key.mongodb_ssh.private_key_pem
-  sensitive   = true
-}
-
-output "ssh_connection_string" {
-  description = "SSH command to connect to the MongoDB instance"
-  value       = "ssh -i mongodb.pem admin@${aws_instance.mongodb.public_ip}"
-}
-
-# ─── MongoDB EC2 ──────────────────────────────────────────────────────────────
+# Mongo outputs
 
 output "mongodb_public_ip" {
   description = "Public IP address of the MongoDB EC2 instance"
@@ -28,7 +16,13 @@ output "mongodb_instance_id" {
   value       = aws_instance.mongodb.id
 }
 
-# ─── Networking ───────────────────────────────────────────────────────────────
+# Mongodb SSH keys
+output "mongodb_secrets_ssh_key" {
+  description = "Command to run to fetch MongoDB SSH key from secretsmanager"
+  value = "aws secretsmanager get-secret-value --secret-id ec2-ssh-private-key --query SecretString --output text > key.pem && chmod 600 key.pem"
+}
+
+# Network outputs
 
 output "vpc_id" {
   description = "ID of the VPC"
@@ -45,30 +39,7 @@ output "private_subnet_id" {
   value       = aws_subnet.private.id
 }
 
-# ─── EKS ──────────────────────────────────────────────────────────────────────
-
-output "eks_cluster_name" {
-  description = "Name of the EKS cluster"
-  value       = aws_eks_cluster.main.name
-}
-
-output "eks_cluster_endpoint" {
-  description = "API server endpoint for the EKS cluster"
-  value       = aws_eks_cluster.main.endpoint
-}
-
-output "eks_cluster_ca_certificate" {
-  description = "Base64-encoded CA certificate for the EKS cluster"
-  value       = aws_eks_cluster.main.certificate_authority[0].data
-  sensitive   = true
-}
-
-output "kubeconfig_command" {
-  description = "Command to configure kubectl for the EKS cluster"
-  value       = "aws eks update-kubeconfig --region ${var.aws_region} --name ${aws_eks_cluster.main.name}"
-}
-
-# ─── S3 ───────────────────────────────────────────────────────────────────────
+# S3 outputs
 
 output "s3_backup_bucket_name" {
   description = "Name of the S3 bucket used for MongoDB backups"
