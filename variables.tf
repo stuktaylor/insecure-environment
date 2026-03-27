@@ -40,6 +40,12 @@ variable mongodb_instance_type {
   default     = "t3.medium"
 }
 
+variable mongodb_private_ip {
+  description = "EC2 instance static IP"
+  type        = string
+  default     = "10.0.1.5"
+}
+
 variable "ec2_public_key" {
   description = "Picked up from the Github Actions pipeline"
   type        = string

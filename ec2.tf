@@ -45,6 +45,12 @@ resource "aws_key_pair" "mongodb" {
   }
 }
 
+# Use a static internal IP ENI
+resource "aws_network_interface" "mongo_eni" {
+  subnet_id = aws_subnet.public.id
+  private_ips = [var.mongodb_private_ip] 
+}
+
 resource "aws_instance" "mongodb" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = var.mongodb_instance_type
@@ -57,6 +63,11 @@ resource "aws_instance" "mongodb" {
     backup_script        = local.backup_script
     backup_cron_schedule = var.backup_cron_schedule
   })
+  
+  network_interface {
+    network_interface_id = aws_network_interface.mongo_eni.id
+    device_index         = 0
+  }
 
   root_block_device {
     volume_size = 20
