@@ -67,6 +67,11 @@ resource "aws_instance" "mongodb" {
     backup_cron_schedule = var.backup_cron_schedule
   })
 
+  network_interface {
+    network_interface_id = aws_network_interface.mongo_eni.id
+    device_index = 0    
+  }
+
   root_block_device {
     volume_size = 20
     volume_type = "gp3"
@@ -77,8 +82,3 @@ resource "aws_instance" "mongodb" {
   }
 }
 
-resource "aws_network_interface_attachment" "mongodb_eni_attachment" {
-  instance_id           = aws_instance.mongodb.id
-  network_interface_id  = aws_network_interface.mongo_eni.id
-  device_index          = 0
-}
