@@ -1,4 +1,4 @@
-name: Terraform Destroy
+name: destroy-mongodb-instance
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ env:
 
 jobs:
   destroy:
-    name: Terraform Destroy
+    name: Terraform Destroy MongoDB Instance
     runs-on: ubuntu-latest
 
     steps:
@@ -45,5 +45,5 @@ jobs:
       - name: Terraform Init
         run: terraform init -backend-config=backend.tfvars
 
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
+      - name: Terraform Destroy MongoDB Instance
+        run: terraform destroy -target=aws_instance.mongodb -auto-approve
