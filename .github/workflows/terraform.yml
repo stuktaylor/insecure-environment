@@ -41,7 +41,7 @@ jobs:
         run: |
           cat > backend.tfvars << 'BACKEND_CONFIG'
           bucket         = "${{ secrets.TF_BACKEND_BUCKET }}"
-          key            = "myapp/terraform.tfstate"
+          key            = "insecure-environment/terraform.tfstate"
           region         = "${{ env.AWS_REGION }}"
           dynamodb_table = "${{ secrets.TF_BACKEND_DYNAMODB_TABLE }}"
           encrypt        = true
@@ -94,7 +94,7 @@ jobs:
         run: |
           cat > backend.tfvars << 'BACKEND_CONFIG'
           bucket         = "${{ secrets.TF_BACKEND_BUCKET }}"
-          key            = "myapp/terraform.tfstate"
+          key            = "insecure-environment/terraform.tfstate"
           region         = "${{ env.AWS_REGION }}"
           dynamodb_table = "${{ secrets.TF_BACKEND_DYNAMODB_TABLE }}"
           encrypt        = true
