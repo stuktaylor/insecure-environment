@@ -1,5 +1,6 @@
 data "aws_ami" "amazon_linux" {
   most_recent = true
+  include_deprecated = true
   owners      = ["amazon"]
 
   filter {
@@ -19,7 +20,7 @@ data "aws_ami" "amazon_linux" {
 
   filter {
     name = "creation-date"
-    values = ["2025-02-*"]
+    values = ["2024-*"]
   }
 }
 
