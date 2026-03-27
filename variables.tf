@@ -44,3 +44,4 @@ variable "ec2_public_key" {
   description = "Picked up from the Github Actions pipeline"
   type        = string
 }
+
