@@ -24,14 +24,9 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-resource "tls_private_key" "mongodb_ssh" {
-  algorithm = "RSA"
-  rsa_bits  = 4096
-}
-
 resource "aws_key_pair" "mongodb" {
   key_name   = "${var.name_prefix}mongodb-key"
-  public_key = tls_private_key.mongodb_ssh.public_key_openssh
+  public_key = var.ec2_public_key
 
   tags = {
     Name = "${var.name_prefix}mongodb-key"
