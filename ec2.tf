@@ -49,13 +49,16 @@ resource "aws_key_pair" "mongodb" {
 resource "aws_network_interface" "mongo_eni" {
   subnet_id = aws_subnet.public.id
   private_ips = [var.mongodb_private_ip] 
+  security_groups = [aws_security_group.mongodb.id]
+
+  tags = {
+    Name = "${var.name_prefix}mongodb-eni"
+  }
 }
 
 resource "aws_instance" "mongodb" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = var.mongodb_instance_type
-  subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.mongodb.id]
   iam_instance_profile   = aws_iam_instance_profile.mongodb.name
   key_name               = aws_key_pair.mongodb.key_name
 
@@ -63,11 +66,6 @@ resource "aws_instance" "mongodb" {
     backup_script        = local.backup_script
     backup_cron_schedule = var.backup_cron_schedule
   })
-  
-  network_interface {
-    network_interface_id = aws_network_interface.mongo_eni.id
-    device_index         = 0
-  }
 
   root_block_device {
     volume_size = 20
@@ -77,4 +75,10 @@ resource "aws_instance" "mongodb" {
   tags = {
     Name = "${var.name_prefix}mongodb"
   }
+}
+
+resource "aws_network_interface_attachment" "mongodb_eni_attachment" {
+  instance_id           = aws_instance.mongodb.id
+  network_interface_id  = aws_network_interface.mongo_eni.id
+  device_index          = 0
 }
