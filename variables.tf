@@ -34,5 +34,8 @@ variable "availability_zone" {
   default     = "eu-west-2a"
 }
 
-
-
+variable mongodb_instance_type {
+  description = "EC2 instance type for the MongoDB server"
+  type        = string
+  default     = "t3.medium"
+}
