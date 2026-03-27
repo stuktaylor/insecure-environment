@@ -33,6 +33,13 @@ output "private_subnet_id" {
   value       = aws_subnet.private.id
 }
 
+# SSH key outputs
+
+output "mongodb_ssh_key_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing the MongoDB SSH private key"
+  value       = aws_secretsmanager_secret.mongodb_ssh_key.arn
+}
+
 # S3 outputs
 
 output "s3_backup_bucket_name" {

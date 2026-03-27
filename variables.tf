@@ -46,11 +46,6 @@ variable mongodb_private_ip {
   default     = "10.0.1.5"
 }
 
-variable "ec2_public_key" {
-  description = "Picked up from the Github Actions pipeline"
-  type        = string
-}
-
 variable "backup_cron_schedule" {
   description = "Cron schedule for nightly MongoDB backups (default: 2am)"
   type        = string

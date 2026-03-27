@@ -1,6 +1,5 @@
 #!/bin/bash
 # MongoDB backup script — runs nightly via cron, uploads to S3.
-# Terraform substitutes BUCKET and REGION; all other $ are plain bash variables.
 set -euo pipefail
 
 BUCKET="${bucket_name}"

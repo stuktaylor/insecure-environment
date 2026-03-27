@@ -36,6 +36,15 @@ data "aws_iam_policy_document" "mongodb_permissions" {
     ]
     resources = ["*"]
   }
+
+  statement {
+    sid    = "SSHKeyAccess"
+    effect = "Allow"
+    actions = [
+      "secretsmanager:GetSecretValue",
+    ]
+    resources = [aws_secretsmanager_secret.mongodb_ssh_key.arn]
+  }
 }
 
 resource "aws_iam_role" "mongodb" {

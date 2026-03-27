@@ -36,9 +36,27 @@ locals {
   })
 }
 
+resource "tls_private_key" "mongodb" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+resource "aws_secretsmanager_secret" "mongodb_ssh_key" {
+  name = "${var.name_prefix}-mongodb-ssh-private-key"
+
+  tags = {
+    Name = "${var.name_prefix}-mongodb-ssh-private-key"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "mongodb_ssh_key" {
+  secret_id     = aws_secretsmanager_secret.mongodb_ssh_key.id
+  secret_string = tls_private_key.mongodb.private_key_pem
+}
+
 resource "aws_key_pair" "mongodb" {
   key_name   = "${var.name_prefix}mongodb-key"
-  public_key = var.ec2_public_key
+  public_key = tls_private_key.mongodb.public_key_openssh
 
   tags = {
     Name = "${var.name_prefix}mongodb-key"
