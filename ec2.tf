@@ -24,6 +24,18 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+locals {
+
+  # Add backup script to local variabl so it grabs bucket name and region 
+  # before passing to the instance userdata
+
+  backup_script = templatefile("${path.module}/templates/mongodb_backup.sh.tpl",
+ {
+    bucket_name = aws_s3_bucket.mongodb_backups.bucket
+    aws_region  = var.aws_region
+  })
+}
+
 resource "aws_key_pair" "mongodb" {
   key_name   = "${var.name_prefix}mongodb-key"
   public_key = var.ec2_public_key
@@ -40,6 +52,11 @@ resource "aws_instance" "mongodb" {
   vpc_security_group_ids = [aws_security_group.mongodb.id]
   iam_instance_profile   = aws_iam_instance_profile.mongodb.name
   key_name               = aws_key_pair.mongodb.key_name
+
+  user_data = templatefile("${path.module}/templates/mongodb_userdata.sh.tpl", {
+    backup_script        = local.backup_script
+    backup_cron_schedule = var.backup_cron_schedule
+  })
 
   root_block_device {
     volume_size = 20

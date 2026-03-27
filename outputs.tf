@@ -16,12 +16,6 @@ output "mongodb_instance_id" {
   value       = aws_instance.mongodb.id
 }
 
-# Mongodb SSH keys
-output "mongodb_secrets_ssh_key" {
-  description = "Command to run to fetch MongoDB SSH key from secretsmanager"
-  value = "aws secretsmanager get-secret-value --secret-id ec2-ssh-private-key --query SecretString --output text > key.pem && chmod 600 key.pem"
-}
-
 # Network outputs
 
 output "vpc_id" {

@@ -45,3 +45,8 @@ variable "ec2_public_key" {
   type        = string
 }
 
+variable "backup_cron_schedule" {
+  description = "Cron schedule for nightly MongoDB backups (default: 2am)"
+  type        = string
+  default     = "0 2 * * *"
+}
