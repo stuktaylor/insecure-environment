@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "tasky" {
-  name                 = "${var.name_prefix}tasky"
+  name                 = "tasky"
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
@@ -7,6 +7,6 @@ resource "aws_ecr_repository" "tasky" {
   }
 
   tags = {
-    Name = "${var.name_prefix}tasky"
+    Name = "tasky"
   }
 }
