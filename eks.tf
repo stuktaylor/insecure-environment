@@ -44,7 +44,7 @@ resource "aws_eks_node_group" "main" {
 }
 
 resource "aws_eks_access_entry" "eks-admin" {
-  cluster_name  = aws_eks_cluster.this.name
+  cluster_name  = aws_eks_cluster.main.name
   principal_arn = var.eks_admin_principal
   type          = "STANDARD"
 }
