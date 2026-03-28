@@ -52,3 +52,20 @@ output "s3_backup_bucket_url" {
   description = "Public URL of the S3 backup bucket"
   value       = "https://${aws_s3_bucket.mongodb_backups.bucket}.s3.${var.aws_region}.amazonaws.com/"
 }
+
+output "eks_cluster_name" {
+  description = "Name of the EKS cluster"
+  value       = aws_eks_cluster.main.name
+}
+
+output "eks_cluster_endpoint" {
+  description = "API server endpoint for the EKS cluster"
+  value       = aws_eks_cluster.main.endpoint
+}
+
+output "eks_cluster_ca_certificate" {
+  description = "Base64-encoded CA certificate for the EKS cluster"
+  value       = aws_eks_cluster.main.certificate_authority[0].data
+  sensitive   = true
+}
+
