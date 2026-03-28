@@ -58,7 +58,8 @@ resource "random_password" "mongodb_tasks" {
 }
 
 resource "aws_secretsmanager_secret" "mongodb_ssh_key" {
-  name = "${var.name_prefix}-mongodb-ssh-private-key"
+  name                    = "${var.name_prefix}-mongodb-ssh-private-key"
+  recovery_window_in_days = 0
 
   tags = {
     Name = "${var.name_prefix}-mongodb-ssh-private-key"
@@ -71,7 +72,8 @@ resource "aws_secretsmanager_secret_version" "mongodb_ssh_key" {
 }
 
 resource "aws_secretsmanager_secret" "mongodb_admin_password" {
-  name = "${var.name_prefix}-mongo-admin-password"
+  name                    = "${var.name_prefix}-mongo-admin-password"
+  recovery_window_in_days = 0
 
   tags = {
     Name = "${var.name_prefix}-mongo-admin-password"
@@ -84,7 +86,8 @@ resource "aws_secretsmanager_secret_version" "mongodb_admin_password" {
 }
 
 resource "aws_secretsmanager_secret" "mongodb_tasks_password" {
-  name = "${var.name_prefix}-mongo-tasks-password"
+  name                    = "${var.name_prefix}-mongo-tasks-password"
+  recovery_window_in_days = 0
 
   tags = {
     Name = "${var.name_prefix}-mongo-tasks-password"
