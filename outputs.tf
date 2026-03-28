@@ -74,3 +74,13 @@ output "eks_cluster_ca_certificate" {
   sensitive   = true
 }
 
+output "ecr_repository_url" {
+  description = "URL of the tasky ECR repository"
+  value       = aws_ecr_repository.tasky.repository_url
+}
+
+output "ecr_repository_arn" {
+  description = "ARN of the tasky ECR repository"
+  value       = aws_ecr_repository.tasky.arn
+}
+
