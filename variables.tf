@@ -91,7 +91,7 @@ variable "eks_node_max_size" {
 variable "eks_admin_principal" {
   description = "IAM Principal with access entry (set by aws sts get-caller-identity)"
   type        = string
-  default     = "arn:aws:sts::548932260189:assumed-role/AWSReservedSSO_AdministratorAccess_525465901663e257/stuarttaylor"
+  default     = "arn:aws:iam::548932260189:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_AdministratorAccess_525465901663e257"
 }
 
 
