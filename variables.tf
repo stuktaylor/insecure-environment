@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "name_prefix" {
   description = "Prefix applied to all resource names"
   type        = string
-  default     = "insecure-environment"
+  default     = "insecure-environment-"
 }
 
 variable "vpc_cidr" {
@@ -61,7 +61,7 @@ variable "backup_cron_schedule" {
 variable "eks_kubernetes_version" {
   description = "Kubernetes version for the EKS cluster"
   type        = string
-  default     = "1.30"
+  default     = "1.35"
 }
 
 variable "eks_node_instance_type" {
@@ -88,5 +88,10 @@ variable "eks_node_max_size" {
   default     = 1
 }
 
+variable "eks_admin_principal" {
+  description = "IAM Principal with access entry (set by aws sts get-caller-identity)"
+  type        = string
+  default     = "arn:aws:sts::548932260189:assumed-role/AWSReservedSSO_AdministratorAccess_525465901663e257/stuarttaylor"
+}
 
 

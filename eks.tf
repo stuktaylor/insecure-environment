@@ -42,3 +42,19 @@ resource "aws_eks_node_group" "main" {
     Name = "${var.name_prefix}eks-nodes"
   }
 }
+
+resource "aws_eks_access_entry" "eks-admin" {
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = var.eks_admin_principal
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "eks-admin" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = aws_eks_access_entry.eks-admin.principal_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
