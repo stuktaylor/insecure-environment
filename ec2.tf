@@ -41,6 +41,22 @@ resource "tls_private_key" "mongodb" {
   rsa_bits  = 4096
 }
 
+resource "random_password" "mongodb_admin" {
+  length  = 8
+  special = false
+  upper   = true
+  lower   = true
+  numeric = true
+}
+
+resource "random_password" "mongodb_tasks" {
+  length  = 8
+  special = false
+  upper   = true
+  lower   = true
+  numeric = true
+}
+
 resource "aws_secretsmanager_secret" "mongodb_ssh_key" {
   name = "${var.name_prefix}-mongodb-ssh-private-key"
 
@@ -52,6 +68,32 @@ resource "aws_secretsmanager_secret" "mongodb_ssh_key" {
 resource "aws_secretsmanager_secret_version" "mongodb_ssh_key" {
   secret_id     = aws_secretsmanager_secret.mongodb_ssh_key.id
   secret_string = tls_private_key.mongodb.private_key_pem
+}
+
+resource "aws_secretsmanager_secret" "mongodb_admin_password" {
+  name = "${var.name_prefix}-mongo-admin-password"
+
+  tags = {
+    Name = "${var.name_prefix}-mongo-admin-password"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "mongodb_admin_password" {
+  secret_id     = aws_secretsmanager_secret.mongodb_admin_password.id
+  secret_string = random_password.mongodb_admin.result
+}
+
+resource "aws_secretsmanager_secret" "mongodb_tasks_password" {
+  name = "${var.name_prefix}-mongo-tasks-password"
+
+  tags = {
+    Name = "${var.name_prefix}-mongo-tasks-password"
+  }
+}
+
+resource "aws_secretsmanager_secret_version" "mongodb_tasks_password" {
+  secret_id     = aws_secretsmanager_secret.mongodb_tasks_password.id
+  secret_string = random_password.mongodb_tasks.result
 }
 
 resource "aws_key_pair" "mongodb" {
@@ -81,8 +123,11 @@ resource "aws_instance" "mongodb" {
   key_name               = aws_key_pair.mongodb.key_name
 
   user_data = templatefile("${path.module}/templates/mongodb_userdata.sh.tpl", {
-    backup_script        = local.backup_script
-    backup_cron_schedule = var.backup_cron_schedule
+    backup_script            = local.backup_script
+    backup_cron_schedule     = var.backup_cron_schedule
+    aws_region               = var.aws_region
+    admin_password_secret_id = aws_secretsmanager_secret.mongodb_admin_password.name
+    tasks_password_secret_id = aws_secretsmanager_secret.mongodb_tasks_password.name
   })
 
   network_interface {

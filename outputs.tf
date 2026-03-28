@@ -1,6 +1,3 @@
-
-# Mongo outputs
-
 output "mongodb_public_ip" {
   description = "Public IP address of the MongoDB EC2 instance"
   value       = aws_instance.mongodb.public_ip
@@ -15,8 +12,6 @@ output "mongodb_instance_id" {
   description = "Instance ID of the MongoDB EC2 instance"
   value       = aws_instance.mongodb.id
 }
-
-# Network outputs
 
 output "vpc_id" {
   description = "ID of the VPC"
@@ -33,14 +28,20 @@ output "private_subnet_id" {
   value       = aws_subnet.private.id
 }
 
-# SSH key outputs
-
 output "mongodb_ssh_key_secret_arn" {
   description = "ARN of the Secrets Manager secret containing the MongoDB SSH private key"
   value       = aws_secretsmanager_secret.mongodb_ssh_key.arn
 }
 
-# S3 outputs
+output "mongodb_admin_password_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing the MongoDB admin password"
+  value       = aws_secretsmanager_secret.mongodb_admin_password.arn
+}
+
+output "mongodb_tasks_password_secret_arn" {
+  description = "ARN of the Secrets Manager secret containing the MongoDB tasks user password"
+  value       = aws_secretsmanager_secret.mongodb_tasks_password.arn
+}
 
 output "s3_backup_bucket_name" {
   description = "Name of the S3 bucket used for MongoDB backups"

@@ -21,6 +21,59 @@ sed -i 's/bindIp: 127.0.0.1/bindIp: 0.0.0.0/' /etc/mongod.conf
 systemctl enable mongod
 systemctl start mongod
 
+# Wait for MongoDB to accept connections
+until mongosh --quiet --eval "db.adminCommand('ping')" > /dev/null 2>&1; do
+  sleep 2
+done
+
+# Fetch passwords from Secrets Manager at runtime
+ADMIN_PASSWORD=$(aws secretsmanager get-secret-value \
+  --secret-id '${admin_password_secret_id}' \
+  --region '${aws_region}' \
+  --query SecretString \
+  --output text)
+
+TASKS_PASSWORD=$(aws secretsmanager get-secret-value \
+  --secret-id '${tasks_password_secret_id}' \
+  --region '${aws_region}' \
+  --query SecretString \
+  --output text)
+
+# Create admin user via localhost exception (only works before auth is enabled)
+mongosh admin --quiet --eval "
+  db.createUser({
+    user: 'admin',
+    pwd: '$ADMIN_PASSWORD',
+    roles: [
+      { role: 'userAdminAnyDatabase', db: 'admin' },
+      { role: 'readWriteAnyDatabase', db: 'admin' },
+      { role: 'dbAdminAnyDatabase',   db: 'admin' }
+    ]
+  })
+"
+
+# Create tasks user, authenticated as admin
+mongosh admin --quiet \
+  -u admin -p "$ADMIN_PASSWORD" --authenticationDatabase admin \
+  --eval "
+    db.getSiblingDB('tasks').createUser({
+      user: 'tasks',
+      pwd: '$TASKS_PASSWORD',
+      roles: [{ role: 'readWrite', db: 'tasks' }]
+    })
+  "
+
+# Clear passwords from memory
+unset ADMIN_PASSWORD TASKS_PASSWORD
+
+# Enable authentication
+cat >> /etc/mongod.conf << 'MONGOD_AUTH'
+security:
+  authorization: enabled
+MONGOD_AUTH
+
+systemctl restart mongod
+
 # Write the backup script (bucket name and region are baked in by Terraform)
 cat > /usr/local/bin/mongodb_backup.sh << 'END_BACKUP_SCRIPT'
 ${backup_script}
