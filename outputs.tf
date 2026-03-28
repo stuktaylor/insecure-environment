@@ -23,9 +23,14 @@ output "public_subnet_id" {
   value       = aws_subnet.public.id
 }
 
-output "private_subnet_id" {
-  description = "ID of the private subnet"
-  value       = aws_subnet.private.id
+output "private_subnet_id_a" {
+  description = "ID of the private subnet a"
+  value       = aws_subnet.private_a.id
+}
+
+output "private_subnet_id_b" {
+  description = "ID of the private subnet b"
+  value       = aws_subnet.private_b.id
 }
 
 output "mongodb_ssh_key_secret_arn" {

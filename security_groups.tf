@@ -17,7 +17,7 @@ resource "aws_security_group" "mongodb" {
     from_port   = 27017
     to_port     = 27017
     protocol    = "tcp"
-    cidr_blocks = [var.private_subnet_cidr]
+    cidr_blocks = [var.private_subnet_cidr_a, var.private_subnet_cidr_b]
   }
 
   egress {
