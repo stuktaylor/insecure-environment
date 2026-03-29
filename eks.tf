@@ -1,3 +1,7 @@
+data "aws_iam_role" "github_actions" {
+  name = "${var.name_prefix}github-actions"
+}
+
 resource "aws_eks_cluster" "main" {
   name     = "${var.name_prefix}eks"
   role_arn = aws_iam_role.eks_cluster.arn
@@ -56,6 +60,22 @@ resource "aws_eks_access_entry" "eks-admin" {
 resource "aws_eks_access_policy_association" "eks-admin" {
   cluster_name  = aws_eks_cluster.main.name
   principal_arn = aws_eks_access_entry.eks-admin.principal_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}
+
+resource "aws_eks_access_entry" "github-actions" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = data.aws_iam_role.github_actions.arn
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "github-actions" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = aws_eks_access_entry.github-actions.principal_arn
   policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
 
   access_scope {
