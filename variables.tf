@@ -94,4 +94,9 @@ variable "eks_admin_principal" {
   default     = "arn:aws:iam::548932260189:role/aws-reserved/sso.amazonaws.com/AWSReservedSSO_AdministratorAccess_525465901663e257"
 }
 
+variable "deployment_principal" {
+  description = "IAM Principal for CI deployment"
+  type        = string
+  default     = "arn:aws:iam::548932260189:role/insecure-environmentgithub-actions"
+}
 

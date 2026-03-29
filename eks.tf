@@ -1,7 +1,3 @@
-data "aws_iam_role" "github_actions" {
-  name = "${var.name_prefix}github-actions"
-}
-
 resource "aws_eks_cluster" "main" {
   name     = "${var.name_prefix}eks"
   role_arn = aws_iam_role.eks_cluster.arn
@@ -69,7 +65,7 @@ resource "aws_eks_access_policy_association" "eks-admin" {
 
 resource "aws_eks_access_entry" "github-actions" {
   cluster_name  = aws_eks_cluster.main.name
-  principal_arn = data.aws_iam_role.github_actions.arn
+  principal_arn = var.deployment_principal
   type          = "STANDARD"
 }
 
