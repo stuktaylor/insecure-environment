@@ -2,33 +2,25 @@ resource "random_id" "bucket_suffix" {
   byte_length = 4
 }
 
-resource "aws_s3_bucket" "mongodb_backups" {
+module "s3_backup" {
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "~> 4.0"
+
   bucket = "${var.name_prefix}mongodb-backups-${random_id.bucket_suffix.hex}"
 
-  tags = {
-    Name = "${var.name_prefix}mongodb-backups"
-  }
-}
+  versioning = { enabled = true }
 
-resource "aws_s3_bucket_versioning" "mongodb_backups" {
-  bucket = aws_s3_bucket.mongodb_backups.id
-
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-
-resource "aws_s3_bucket_public_access_block" "mongodb_backups" {
-  bucket = aws_s3_bucket.mongodb_backups.id
-
+  # Intentionally insecure — public access required for this environment
   block_public_acls       = false
   block_public_policy     = false
   ignore_public_acls      = false
   restrict_public_buckets = false
+
+  tags = { Name = "${var.name_prefix}mongodb-backups" }
 }
 
 resource "aws_s3_bucket_policy" "mongodb_backups_public" {
-  bucket = aws_s3_bucket.mongodb_backups.id
+  bucket = module.s3_backup.s3_bucket_id
 
   policy = jsonencode({
     Version = "2012-10-17"
@@ -38,18 +30,17 @@ resource "aws_s3_bucket_policy" "mongodb_backups_public" {
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.mongodb_backups.arn}/*"
+        Resource  = "${module.s3_backup.s3_bucket_arn}/*"
       },
       {
         Sid       = "PublicListBucket"
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:ListBucket"
-        Resource  = aws_s3_bucket.mongodb_backups.arn
+        Resource  = module.s3_backup.s3_bucket_arn
       }
     ]
   })
 
-  # Public access block must be disabled before a public bucket policy is accepted
-  depends_on = [aws_s3_bucket_public_access_block.mongodb_backups]
+  depends_on = [module.s3_backup]
 }

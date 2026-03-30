@@ -1,80 +1,70 @@
-resource "aws_eks_cluster" "main" {
-  name     = "${var.name_prefix}eks"
-  role_arn = aws_iam_role.eks_cluster.arn
-  version  = var.eks_kubernetes_version
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "~> 20.0"
 
-  vpc_config {
-    subnet_ids              = [aws_subnet.private_a.id, aws_subnet.private_b.id]
-    security_group_ids      = [aws_security_group.eks_cluster.id]
-    endpoint_private_access = true
-    endpoint_public_access  = true
+  cluster_name    = "${var.name_prefix}eks"
+  cluster_version = var.eks_kubernetes_version
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  cluster_endpoint_public_access  = true
+  cluster_endpoint_private_access = true
+
+  cluster_access_config = {
+    authentication_mode = "API_AND_CONFIG_MAP"
   }
 
-  access_config {
-     authentication_mode = "API_AND_CONFIG_MAP"
-   }
-   
-  # Cluster role must be ready before the cluster is created
-  depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]
+  # Reuse security groups defined in security_groups.tf
+  create_cluster_security_group = false
+  cluster_security_group_id     = aws_security_group.eks_cluster.id
+  create_node_security_group    = false
+  node_security_group_id        = aws_security_group.eks_nodes.id
 
-  tags = {
-    Name = "${var.name_prefix}eks"
-  }
-}
-
-resource "aws_eks_node_group" "main" {
-  cluster_name    = aws_eks_cluster.main.name
-  node_group_name = "${var.name_prefix}eks-nodes"
-  node_role_arn   = aws_iam_role.eks_nodes.arn
-  subnet_ids      = [aws_subnet.private_a.id, aws_subnet.private_b.id]
-  instance_types  = [var.eks_node_instance_type]
-
-  scaling_config {
-    desired_size = var.eks_node_desired_size
-    min_size     = var.eks_node_min_size
-    max_size     = var.eks_node_max_size
+  cluster_addons = {
+    vpc-cni = {
+      most_recent = true
+    }
+    coredns = {
+      most_recent = true
+    }
+    kube-proxy = {
+      most_recent = true
+    }
   }
 
-  # Node role policies must be attached before nodes are created
-  depends_on = [
-    aws_iam_role_policy_attachment.eks_worker_node_policy,
-    aws_iam_role_policy_attachment.eks_cni_policy,
-    aws_iam_role_policy_attachment.eks_ecr_read_only,
-  ]
-
-  tags = {
-    Name = "${var.name_prefix}eks-nodes"
+  eks_managed_node_groups = {
+    main = {
+      name           = "${var.name_prefix}eks-nodes"
+      instance_types = [var.eks_node_instance_type]
+      min_size       = var.eks_node_min_size
+      max_size       = var.eks_node_max_size
+      desired_size   = var.eks_node_desired_size
+    }
   }
-}
 
-resource "aws_eks_access_entry" "eks-admin" {
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = var.eks_admin_principal
-  type          = "STANDARD"
-}
-
-resource "aws_eks_access_policy_association" "eks-admin" {
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = aws_eks_access_entry.eks-admin.principal_arn
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-
-  access_scope {
-    type = "cluster"
+  access_entries = {
+    eks-admin = {
+      principal_arn = var.eks_admin_principal
+      type          = "STANDARD"
+      policy_associations = {
+        admin = {
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = { type = "cluster" }
+        }
+      }
+    }
+    github-actions = {
+      principal_arn = var.deployment_principal
+      type          = "STANDARD"
+      policy_associations = {
+        admin = {
+          policy_arn   = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+          access_scope = { type = "cluster" }
+        }
+      }
+    }
   }
-}
 
-resource "aws_eks_access_entry" "github-actions" {
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = var.deployment_principal
-  type          = "STANDARD"
-}
-
-resource "aws_eks_access_policy_association" "github-actions" {
-  cluster_name  = aws_eks_cluster.main.name
-  principal_arn = aws_eks_access_entry.github-actions.principal_arn
-  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
-
-  access_scope {
-    type = "cluster"
-  }
+  tags = { Name = "${var.name_prefix}eks" }
 }

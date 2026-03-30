@@ -19,8 +19,8 @@ data "aws_iam_policy_document" "mongodb_permissions" {
       "s3:ListBucket",
     ]
     resources = [
-      aws_s3_bucket.mongodb_backups.arn,
-      "${aws_s3_bucket.mongodb_backups.arn}/*",
+      module.s3_backup.s3_bucket_arn,
+      "${module.s3_backup.s3_bucket_arn}/*",
     ]
   }
 
@@ -51,27 +51,7 @@ data "aws_iam_policy_document" "mongodb_permissions" {
   }
 }
 
-data "aws_iam_policy_document" "eks_cluster_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["eks.amazonaws.com"]
-    }
-  }
-}
-
-data "aws_iam_policy_document" "eks_node_assume_role" {
-  statement {
-    actions = ["sts:AssumeRole"]
-    principals {
-      type        = "Service"
-      identifiers = ["ec2.amazonaws.com"]
-    }
-  }
-}
-
-# Mongodb instance profile
+# MongoDB instance profile
 resource "aws_iam_role" "mongodb" {
   name               = "${var.name_prefix}mongodb-role"
   assume_role_policy = data.aws_iam_policy_document.mongodb_assume_role.json
@@ -92,42 +72,38 @@ resource "aws_iam_instance_profile" "mongodb" {
   role = aws_iam_role.mongodb.name
 }
 
-# EKS cluster role
-resource "aws_iam_role" "eks_cluster" {
-  name               = "${var.name_prefix}eks-cluster-role"
-  assume_role_policy = data.aws_iam_policy_document.eks_cluster_assume_role.json
-
-  tags = {
-    Name = "${var.name_prefix}eks-cluster-role"
-  }
+# AWS Load Balancer Controller IRSA
+data "http" "lbc_iam_policy" {
+  url = "https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/main/docs/install/iam_policy.json"
 }
 
-resource "aws_iam_role_policy_attachment" "eks_cluster_policy" {
-  role       = aws_iam_role.eks_cluster.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSClusterPolicy"
+resource "aws_iam_policy" "lbc" {
+  name   = "${var.name_prefix}aws-load-balancer-controller"
+  policy = data.http.lbc_iam_policy.response_body
 }
 
-# EKS node pool nodes
-resource "aws_iam_role" "eks_nodes" {
-  name               = "${var.name_prefix}eks-node-role"
-  assume_role_policy = data.aws_iam_policy_document.eks_node_assume_role.json
+resource "aws_iam_role" "lbc" {
+  name = "${var.name_prefix}aws-load-balancer-controller"
 
-  tags = {
-    Name = "${var.name_prefix}eks-node-role"
-  }
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Federated = module.eks.oidc_provider_arn
+      }
+      Action = "sts:AssumeRoleWithWebIdentity"
+      Condition = {
+        StringEquals = {
+          "${module.eks.oidc_provider}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+          "${module.eks.oidc_provider}:aud" = "sts.amazonaws.com"
+        }
+      }
+    }]
+  })
 }
 
-resource "aws_iam_role_policy_attachment" "eks_worker_node_policy" {
-  role       = aws_iam_role.eks_nodes.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-}
-
-resource "aws_iam_role_policy_attachment" "eks_cni_policy" {
-  role       = aws_iam_role.eks_nodes.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-}
-
-resource "aws_iam_role_policy_attachment" "eks_ecr_read_only" {
-  role       = aws_iam_role.eks_nodes.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+resource "aws_iam_role_policy_attachment" "lbc" {
+  role       = aws_iam_role.lbc.name
+  policy_arn = aws_iam_policy.lbc.arn
 }

@@ -31,7 +31,7 @@ locals {
 
   backup_script = templatefile("${path.module}/templates/mongodb_backup.sh.tpl",
  {
-    bucket_name = aws_s3_bucket.mongodb_backups.bucket
+    bucket_name = module.s3_backup.s3_bucket_id
     aws_region  = var.aws_region
   })
 }
@@ -110,7 +110,7 @@ resource "aws_key_pair" "mongodb" {
 
 # Use a static internal IP ENI
 resource "aws_network_interface" "mongo_eni" {
-  subnet_id = aws_subnet.public.id
+  subnet_id = module.vpc.public_subnets[0]
   private_ips = [var.mongodb_private_ip] 
   security_groups = [aws_security_group.mongodb.id]
 

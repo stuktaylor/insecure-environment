@@ -2,7 +2,7 @@
 resource "aws_security_group" "mongodb" {
   name        = "${var.name_prefix}mongodb-sg"
   description = "Allow SSH from internet and MongoDB from private subnet"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     description = "SSH from internet"
@@ -37,7 +37,7 @@ resource "aws_security_group" "mongodb" {
 resource "aws_security_group" "eks_cluster" {
   name        = "${var.name_prefix}eks-cluster-sg"
   description = "EKS control plane security group"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.vpc.vpc_id
 
   egress {
     description = "Allow all outbound"
@@ -56,7 +56,7 @@ resource "aws_security_group" "eks_cluster" {
 resource "aws_security_group" "eks_nodes" {
   name        = "${var.name_prefix}eks-nodes-sg"
   description = "EKS worker node security group"
-  vpc_id      = aws_vpc.main.id
+  vpc_id      = module.vpc.vpc_id
 
   ingress {
     description     = "Control plane to node communication"
