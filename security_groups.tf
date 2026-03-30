@@ -39,14 +39,6 @@ resource "aws_security_group" "eks_cluster" {
   description = "EKS control plane security group"
   vpc_id      = module.vpc.vpc_id
 
-  ingress {
-    description     = "API server from worker nodes"
-    from_port       = 443
-    to_port         = 443
-    protocol        = "tcp"
-    security_groups = [aws_security_group.eks_nodes.id]
-  }
-
   egress {
     description = "Allow all outbound"
     from_port   = 0
@@ -67,14 +59,6 @@ resource "aws_security_group" "eks_nodes" {
   vpc_id      = module.vpc.vpc_id
 
   ingress {
-    description     = "Control plane to node communication"
-    from_port       = 0
-    to_port         = 65535
-    protocol        = "tcp"
-    security_groups = [aws_security_group.eks_cluster.id]
-  }
-
-  ingress {
     description = "Node to node communication"
     from_port   = 0
     to_port     = 0
@@ -93,4 +77,25 @@ resource "aws_security_group" "eks_nodes" {
   tags = {
     Name = "${var.name_prefix}eks-nodes-sg"
   }
+}
+
+# Cross-references extracted to break the dependency cycle
+resource "aws_security_group_rule" "nodes_to_cluster_443" {
+  description              = "API server from worker nodes"
+  type                     = "ingress"
+  from_port                = 443
+  to_port                  = 443
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.eks_cluster.id
+  source_security_group_id = aws_security_group.eks_nodes.id
+}
+
+resource "aws_security_group_rule" "cluster_to_nodes" {
+  description              = "Control plane to node communication"
+  type                     = "ingress"
+  from_port                = 0
+  to_port                  = 65535
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.eks_nodes.id
+  source_security_group_id = aws_security_group.eks_cluster.id
 }
