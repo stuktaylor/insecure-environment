@@ -11,7 +11,7 @@ module "eks" {
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
 
-  cluster_access_config = {
+  access_config = {
     authentication_mode = "API_AND_CONFIG_MAP"
   }
 
