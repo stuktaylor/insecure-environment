@@ -11,10 +11,6 @@ module "eks" {
   cluster_endpoint_public_access  = true
   cluster_endpoint_private_access = true
 
-  access_config = {
-    authentication_mode = "API_AND_CONFIG_MAP"
-  }
-
   # Reuse security groups defined in security_groups.tf
   create_cluster_security_group = false
   cluster_security_group_id     = aws_security_group.eks_cluster.id
