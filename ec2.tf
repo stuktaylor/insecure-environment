@@ -119,6 +119,19 @@ resource "aws_network_interface" "mongo_eni" {
   }
 }
 
+resource "aws_eip" "mongodb" {
+  domain = "vpc"
+
+  tags = {
+    Name = "${var.name_prefix}mongodb-eip"
+  }
+}
+
+resource "aws_eip_association" "mongodb" {
+  network_interface_id = aws_network_interface.mongo_eni.id
+  allocation_id        = aws_eip.mongodb.id
+}
+
 resource "aws_instance" "mongodb" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = var.mongodb_instance_type

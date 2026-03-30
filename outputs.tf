@@ -1,6 +1,6 @@
 output "mongodb_public_ip" {
   description = "Public IP address of the MongoDB EC2 instance"
-  value       = aws_instance.mongodb.public_ip
+  value       = aws_eip.mongodb.public_ip
 }
 
 output "mongodb_private_ip" {
