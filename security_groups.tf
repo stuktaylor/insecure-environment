@@ -39,6 +39,14 @@ resource "aws_security_group" "eks_cluster" {
   description = "EKS control plane security group"
   vpc_id      = module.vpc.vpc_id
 
+  ingress {
+    description     = "API server from worker nodes"
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.eks_nodes.id]
+  }
+
   egress {
     description = "Allow all outbound"
     from_port   = 0
